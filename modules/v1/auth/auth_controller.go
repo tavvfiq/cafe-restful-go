@@ -66,7 +66,7 @@ func LoginHandler(ctx echo.Context) error {
 	// bind http body to model struct
 	if err := ctx.Bind(l); err != nil {
 		log.Fatal(err)
-		return ctx.JSON(http.StatusInternalServerError, helper.ErrorResponse{Status: http.StatusInternalServerError, Error: "error registering user"})
+		return ctx.JSON(http.StatusInternalServerError, helper.ErrorResponse{Status: http.StatusInternalServerError, Error: "error log in user"})
 	}
 	// var to store database result
 	result := model.User{}

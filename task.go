@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/tavvfiq/cafe-rest-api-gorm/database"
 	"github.com/tavvfiq/cafe-rest-api-gorm/database/model"
 	"github.com/tavvfiq/cafe-rest-api-gorm/database/seeder"
@@ -22,10 +23,9 @@ func Start() {
 func Create() error {
 	dbName := os.Getenv("DB_NAME")
 	log.Printf("creating database: %s", dbName)
-	result := database.Db.Exec("CREATE DATABASE " + dbName)
+	result := database.Db.Exec("CREATE DATABASE IF NOT EXISTS " + dbName)
 	if result.Error != nil {
-		log.Fatal(result.Error)
-		return result.Error
+		return errors.Wrap(result.Error, "error on creating database")
 	}
 	log.Println("create database success")
 	return nil
@@ -35,10 +35,9 @@ func Create() error {
 func Delete() error {
 	dbName := os.Getenv("DB_NAME")
 	log.Printf("deleting database %s", dbName)
-	result := database.Db.Exec("DROP DATABASE " + dbName)
+	result := database.Db.Exec("DROP DATABASE IF EXISTS " + dbName)
 	if result.Error != nil {
-		log.Fatal(result.Error)
-		return result.Error
+		return errors.Wrap(result.Error, "error on deleting database")
 	}
 	log.Println("delete database success")
 	return nil
@@ -51,7 +50,7 @@ func Migrate() error {
 	log.Printf("migrating...")
 	error := database.Db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&model.Level{}, &model.User{}, &model.Category{}, &model.Menu{}, &model.History{}, &model.OrderHistory{})
 	if error != nil {
-		return error
+		return errors.Wrap(error, "error migrating database")
 	}
 	log.Printf("migrating success")
 	return nil
@@ -80,22 +79,21 @@ func Seed(tableName string) error {
 }
 
 // Reset database (drop, create, migrate, seed)
-func Reset() error {
+func Reset() {
 	// deleting previous database
 	if error := Delete(); error != nil {
-		log.Printf("previous table doest exist, creating one")
+		log.Println(error)
 	}
 	// create new database
 	if error := Create(); error != nil {
-		return error
+		log.Println(error)
 	}
 	// migrate tables
 	if error := Migrate(); error != nil {
-		return error
+		log.Println(error)
 	}
 	// seed data
 	if error := Seed("all"); error != nil {
-		return error
+		log.Println(error)
 	}
-	return nil
 }
